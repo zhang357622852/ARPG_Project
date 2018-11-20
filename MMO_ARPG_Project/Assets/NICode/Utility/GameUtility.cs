@@ -1,3 +1,4 @@
+using ICSharpCode.SharpZipLib.Zip;
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -22,6 +23,18 @@ public static class GameUtility
         return path.Split(seperator.ToCharArray(), StringSplitOptions.RemoveEmptyEntries);
     }
 
+    public static string ConvertToNGUIFormat(string c_format_text)
+    {
+        string temp_text = c_format_text.Replace("<br/>", "\n");
+        temp_text = temp_text.Replace(@"<\>", "[");
+        temp_text = temp_text.Replace(@"</>", "]");
+
+        foreach (KeyValuePair<string, string> v in ColorConfig.mColorTag)
+            temp_text = temp_text.Replace(v.Key, v.Value);
+
+        return temp_text;
+    }
+
     /// <summary>
     /// Gets the Md5.
     /// </summary>
@@ -34,7 +47,7 @@ public static class GameUtility
         bytValue = System.Text.Encoding.UTF8.GetBytes(sDataIn);
         bytHash = md5.ComputeHash(bytValue);
         md5.Clear();
-        
+
         string sTemp = "";
 
         foreach (byte b in bytHash)
