@@ -5,6 +5,8 @@ using UnityEngine;
 public partial class StartWnd
 {
 	[Header("----------------")]
+	public GameObject mBg;
+
 	public GameObject mAccountBtn;
 
 	public UILabel mAccountLab;

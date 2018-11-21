@@ -1,4 +1,4 @@
-﻿/// <summary>
+/// <summary>
 /// ReferencesCounter.cs
 /// Created by zhaozy 2015-05-15
 /// 引用计数脚本
@@ -16,6 +16,7 @@ public class ReferencesCounter : MonoBehaviour
 #region 变量
 
     public string resPath = string.Empty;
+
     private Resource res = null;
 
 #endregion
@@ -30,7 +31,7 @@ public class ReferencesCounter : MonoBehaviour
             return;
 
         // 缓存列表中没有获取到资源信息
-        ResourceMgr.ResourceMap.TryGetValue(resPath, out res);
+        ResourceMgr.Instance.ResourceMap.TryGetValue(resPath, out res);
         if (res == null)
             return;
 

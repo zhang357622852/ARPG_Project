@@ -55,7 +55,7 @@ public static class CsvFileMgr
         {
             // 载入资源
             string assetPath = ConfigMgr.ETC_PATH + "/" + csvName + CSV_EXT;
-            byte[] csvBytes = ResourceMgr.LoadByte(assetPath);
+            byte[] csvBytes = ResourceMgr.Instance.LoadByte(assetPath);
 
             // 资源不存在
             if (csvBytes == null || csvBytes.Length == 0)

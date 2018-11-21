@@ -34,9 +34,9 @@ public class Scheduler : MonoBehaviour
 
 #else
         // 音效更新驱动
-        Call(() => {
-            GameSoundMgr.Update();
-        });
+        //Call(() => {
+        //    GameSoundMgr.Update();
+        //});
 #endif
     }
 }

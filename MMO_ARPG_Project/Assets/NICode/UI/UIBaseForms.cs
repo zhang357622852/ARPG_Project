@@ -27,7 +27,7 @@ public abstract class UIBaseFormsRoot : MonoBehaviour
     }
 
     /// <summary>
-    /// 再次显示
+    /// 显示
     /// </summary>
     public abstract void Show();
 

@@ -11,18 +11,13 @@ using UnityEngine;
 public partial class StartWnd : UIBaseForms<StartWnd>
 {
     #region 内部函数
-
-    private void Start()
-    {
-        Init();
-    }
-
     public override void Init()
 	{
-		Show();
-
 		RegisterEvent();
-	}
+
+        //float scale = GameUtility.CalcWndScale();
+        //transform.localScale = new Vector3(scale, scale, scale);
+    }
 
 	private void RegisterEvent()
 	{
@@ -38,6 +33,8 @@ public partial class StartWnd : UIBaseForms<StartWnd>
 	private void OnClickAccount(GameObject go)
 	{
         NIDebug.Log("==OnClickAccount=");
+
+        UIMgr.Instance.ShowForms<AccountWnd>(AccountWnd.FormsName);
 	}
 
     private void OnClickSection(GameObject go)
@@ -48,6 +45,8 @@ public partial class StartWnd : UIBaseForms<StartWnd>
     private void OnClickGotoGame(GameObject go)
     {
         NIDebug.Log("==OnClickGotoGame=");
+
+        UIMgr.Instance.CloseForms(StartWnd.FormsName);
     }
 
     #endregion

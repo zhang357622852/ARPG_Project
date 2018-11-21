@@ -1,6 +1,7 @@
 Library/
 ProjectSettings/
 Temp/
+Publish/
 MMO_ARPG_Project/MMO_ARPG_Project.sln
 *.meta
 MMO_ARPG_Project/.vs/MMO_ARPG_Project/v15/Server/sqlite3/storage.ide-wal

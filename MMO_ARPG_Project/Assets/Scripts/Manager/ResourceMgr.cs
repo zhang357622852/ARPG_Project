@@ -13,34 +13,34 @@ public class ResourceMgr : Singleton<ResourceMgr>
 
     // 资源缓存列表
     // key->filePath
-    private static Dictionary<string, Resource> mResourceMap = new Dictionary<string, Resource>();
+    private Dictionary<string, Resource> mResourceMap = new Dictionary<string, Resource>();
 
     // AssetBundle资源列表
     // key->bundleName
-    private static Dictionary<string, AssetBundle> mAssetBundleMap = new Dictionary<string, AssetBundle>();
+    private Dictionary<string, AssetBundle> mAssetBundleMap = new Dictionary<string, AssetBundle>();
 
     // ab包引用列表记录
     // key->bundleName
-    private static Dictionary<string, List<Resource>> mAB2ResourceMap = new Dictionary<string, List<Resource>>();
+    private Dictionary<string, List<Resource>> mAB2ResourceMap = new Dictionary<string, List<Resource>>();
 
     // 是否自动垃圾回收
-    private static bool mAutoRecycle = true;
+    private bool mAutoRecycle = true;
 
     // 已经回收资源数量
-    private static int mRecycleCount = 0;
+    private int mRecycleCount = 0;
 
     /// <summary>
     /// etc资源包，这个名字需要定死
     /// </summary>
-    public static string  ETC_BUNDLE = "etc";
+    public string  ETC_BUNDLE = "etc";
 
     // 资源更新是否完成
-    private static bool isUpdateResOk = false;
+    private bool isUpdateResOk = false;
 
     // etc资源映射表
-    private static Dictionary<string, byte[]> etcBtyeAssetMap = new Dictionary<string, byte[]>();
-    private static Dictionary<string, string> etcTextAssetMap = new Dictionary<string, string>();
-    private static List<string> etcSkillActionList = new List<string>();
+    private Dictionary<string, byte[]> etcBtyeAssetMap = new Dictionary<string, byte[]>();
+    private Dictionary<string, string> etcTextAssetMap = new Dictionary<string, string>();
+    private List<string> etcSkillActionList = new List<string>();
 
     #endregion
 
@@ -50,7 +50,7 @@ public class ResourceMgr : Singleton<ResourceMgr>
     /// 获取资源
     /// </summary>
     /// <value>The resource map.</value>
-    public static Dictionary<string, Resource> ResourceMap
+    public Dictionary<string, Resource> ResourceMap
     {
         get
         {
@@ -62,7 +62,7 @@ public class ResourceMgr : Singleton<ResourceMgr>
     /// 获取AssetBundle资源
     /// </summary>
     /// <value>The asset bundle map.</value>
-    public static Dictionary<string, AssetBundle> AssetBundleMap
+    public Dictionary<string, AssetBundle> AssetBundleMap
     {
         get
         {
@@ -74,7 +74,7 @@ public class ResourceMgr : Singleton<ResourceMgr>
     /// 获取AssetBundle和资源映射关系
     /// </summary>
     /// <value>The asset bundle map.</value>
-    public static Dictionary<string, List<Resource>> AB2ResourceMap
+    public Dictionary<string, List<Resource>> AB2ResourceMap
     {
         get
         {
@@ -86,7 +86,7 @@ public class ResourceMgr : Singleton<ResourceMgr>
     /// 是否自动垃圾回收
     /// </summary>
     /// <value><c>true</c> if auto recycle; otherwise, <c>false</c>.</value>
-    public static bool AutoRecycle
+    public bool AutoRecycle
     {
         get
         {
@@ -101,10 +101,10 @@ public class ResourceMgr : Singleton<ResourceMgr>
     /// <summary>
     /// ab资源AssetBundleManifest依赖关系
     /// </summary>
-    public static AssetBundleManifest Manifest { get; private set;}
+    public AssetBundleManifest Manifest { get; private set;}
 
     /// 当前已下载的资源总量
-    public static int DownloadedBytes { get; private set; }
+    public int DownloadedBytes { get; private set; }
 
     #endregion
 
@@ -114,7 +114,7 @@ public class ResourceMgr : Singleton<ResourceMgr>
     /// 回收协程
     /// </summary>
     /// <returns>The daemon.</returns>
-    private static IEnumerator RecycleDaemon()
+    private IEnumerator RecycleDaemon()
     {
         // 永固不停歇的回收资源
         while (true)
@@ -135,7 +135,7 @@ public class ResourceMgr : Singleton<ResourceMgr>
     /// 载入AssetBundleManifest
     /// </summary>
     /// <returns>The asset bundle manifest.</returns>
-    private static IEnumerator LoadAssetBundleManifest()
+    private IEnumerator LoadAssetBundleManifest()
     {
         // 本地版本文件不存在
         string filePath = string.Format("{0}/AssetBundles", ConfigMgr.ASSETBUNDLES_PATH);
@@ -157,7 +157,7 @@ public class ResourceMgr : Singleton<ResourceMgr>
     /// <summary>
     /// 获取某个Bundle依赖的Bundle列表
     /// </summary>
-    private static string[] GetDependentBundle(string bundle)
+    private string[] GetDependentBundle(string bundle)
     {
         // 如果Manifest为null
         if (Manifest == null)
@@ -170,7 +170,7 @@ public class ResourceMgr : Singleton<ResourceMgr>
     /// <summary>
     /// 载入资源
     /// </summary>
-    private static Resource LoadResource(string resPath, bool isDontUnload, bool isSprite = false, bool isAtlas = false)
+    private Resource LoadResource(string resPath, bool isDontUnload, bool isSprite = false, bool isAtlas = false)
     {
         Resource res;
 
@@ -200,29 +200,32 @@ public class ResourceMgr : Singleton<ResourceMgr>
             {
                 // 尝试载入资源，如果是编辑器模式则通过UnityEditor.AssetDatabase.LoadAssetAtPath载入
                 // 否则通过Resources.Load载入
-#if UNITY_EDITOR
-                // 编辑器测试阶段，直接加载即可
-                // 不是Sprite资源默认UnityEngine.Object
-                if (isSprite)
-                    res.MainAsset = UnityEditor.AssetDatabase.LoadAssetAtPath<UnityEngine.Sprite>(resPath);
-                else if(isAtlas)
-                    res.MainAsset = UnityEditor.AssetDatabase.LoadAssetAtPath<UIAtlas>(resPath);
+                if (Platform.IsEditor)
+                {
+                    // 编辑器测试阶段，直接加载即可
+                    // 不是Sprite资源默认UnityEngine.Object
+                    if (isSprite)
+                        res.MainAsset = UnityEditor.AssetDatabase.LoadAssetAtPath<UnityEngine.Sprite>(resPath);
+                    else if (isAtlas)
+                        res.MainAsset = UnityEditor.AssetDatabase.LoadAssetAtPath<UIAtlas>(resPath);
+                    else
+                        res.MainAsset = UnityEditor.AssetDatabase.LoadAssetAtPath<UnityEngine.Object>(resPath);
+                }
                 else
-                    res.MainAsset = UnityEditor.AssetDatabase.LoadAssetAtPath<UnityEngine.Object>(resPath);
-#else
-                // 默认资源路径Assets/Prefabs/Model/m1011_d.prefab
-                // 最终的目标路径为Prefabs/Model/m1011_d.prefab
-                resPath = resPath.Replace(Path.GetExtension(resPath), string.Empty).Replace("Assets/", string.Empty);
+                {
+                    // 默认资源路径Assets/Prefabs/Model/m1011_d.prefab
+                    // 最终的目标路径为Prefabs/Model/m1011_d.prefab
+                    resPath = resPath.Replace(Path.GetExtension(resPath), string.Empty).Replace("Assets/", string.Empty);
 
-                // 编辑器测试阶段，直接加载即可
-                // 不是Sprite资源默认UnityEngine.Object
-                if (isSprite)
-                    res.MainAsset = Resources.Load<UnityEngine.Sprite>(resPath);
-                else if(isAtlas)
-                    res.MainAsset = Resources.Load<UIAtlas>(resPath);
-                else
-                    res.MainAsset = Resources.Load(resPath);
-#endif
+                    // 编辑器测试阶段，直接加载即可
+                    // 不是Sprite资源默认UnityEngine.Object
+                    if (isSprite)
+                        res.MainAsset = Resources.Load<UnityEngine.Sprite>(resPath);
+                    else if (isAtlas)
+                        res.MainAsset = Resources.Load<UIAtlas>(resPath);
+                    else
+                        res.MainAsset = Resources.Load(resPath);
+                }
             }
             else
             {
@@ -293,7 +296,7 @@ public class ResourceMgr : Singleton<ResourceMgr>
     /// 更新资源
     /// </summary>
     /// <returns>The daemon.</returns>
-    private static IEnumerator UpdateAllResources()
+    private IEnumerator UpdateAllResources()
     {
         // 重置下载字节数标识
         DownloadedBytes = 0;
@@ -566,7 +569,7 @@ public class ResourceMgr : Singleton<ResourceMgr>
     /// 初始化开始场景中的资源
     /// </summary>
     /// <param name="_files">Files.</param>
-    private static void InitStartRes()
+    private void InitStartRes()
     {
         // 初始化开始场景语言
        // LocalizationMgr.InitStartRes();
@@ -579,7 +582,7 @@ public class ResourceMgr : Singleton<ResourceMgr>
     /// 载入本地etc资源线程
     /// </summary>
     /// <param name="_files">Files.</param>
-    private static void DeLoadEtcTextThread(object _path)
+    private void DeLoadEtcTextThread(object _path)
     {
         // 目录不存在，不处理
         string path = (string) _path;
@@ -627,57 +630,55 @@ public class ResourceMgr : Singleton<ResourceMgr>
     /// 加载技能文件（仅在验证客户端模式下使用，直接加载resource下的资源）
     /// </summary>
     /// <param name="_files">Files.</param>
-    private static void LoadSkillActionFile()
+    private void LoadSkillActionFile()
     {
-#if UNITY_EDITOR
-
-        // 载入全部资源
-        foreach (string filePath in Directory.GetFiles(ConfigMgr.ETC_PATH, "*"))
+        if (Platform.IsEditor)
         {
-            // meta文件不处理
-            if (filePath.Contains(".meta"))
-                continue;
-
-            // 转换路径
-            string tempPath = filePath.Replace("\\", "/");
-            string ex = Path.GetExtension(tempPath);
-
-            if (string.Equals(ex, ".xml") && Path.GetFileName(tempPath).Contains("skill_action"))
-                etcSkillActionList.Add(ResourceMgr.Load(tempPath).ToString());
-        }
-
-#else
-
-        // 取得skill_action综合文件，加载所有skill_action
-        string resPath = string.Format("Assets/{0}", ConfigMgr.SKILL_ACTION_DICT);
-
-        string resText = ResourceMgr.LoadText(resPath);
-
-        if(string.IsNullOrEmpty(resText))
-        {
-            LogMgr.Trace("加载skill_action_dict文件失败。");
-            return;
-        }
-
-        string[] lines = Game.Explode(resText, "\n");
-        foreach (string line in lines)
-        {
-            if(string.IsNullOrEmpty(line))
-                continue;
-
-            resText = ResourceMgr.LoadText(line);
-
-            if(string.IsNullOrEmpty(resText))
+            // 载入全部资源
+            foreach (string filePath in Directory.GetFiles(ConfigMgr.ETC_PATH, "*"))
             {
-                LogMgr.Trace("加载{0}文件失败。", line);
-                continue;
+                // meta文件不处理
+                if (filePath.Contains(".meta"))
+                    continue;
+
+                // 转换路径
+                string tempPath = filePath.Replace("\\", "/");
+                string ex = Path.GetExtension(tempPath);
+
+                if (string.Equals(ex, ".xml") && Path.GetFileName(tempPath).Contains("skill_action"))
+                    etcSkillActionList.Add(ResourceMgr.Instance.Load(tempPath).ToString());
+            }
+        }
+        else
+        {
+            // 取得skill_action综合文件，加载所有skill_action
+            string resPath = string.Format("Assets/{0}", ConfigMgr.SKILL_ACTION_DICT);
+
+            string resText = ResourceMgr.Instance.LoadText(resPath);
+
+            if (string.IsNullOrEmpty(resText))
+            {
+                NIDebug.Log("加载skill_action_dict文件失败。");
+                return;
             }
 
-            etcSkillActionList.Add(ResourceMgr.LoadText(line));
+            string[] lines = GameUtility.Explode(resText, "\n");
+            foreach (string line in lines)
+            {
+                if (string.IsNullOrEmpty(line))
+                    continue;
+
+                resText = ResourceMgr.Instance.LoadText(line);
+
+                if (string.IsNullOrEmpty(resText))
+                {
+                    NIDebug.Log("加载{0}文件失败。", line);
+                    continue;
+                }
+
+                etcSkillActionList.Add(ResourceMgr.Instance.LoadText(line));
+            }
         }
-
-#endif
-
     }
 
     #endregion
@@ -688,7 +689,7 @@ public class ResourceMgr : Singleton<ResourceMgr>
     /// Encypt the specified targetData.
     /// </summary>
     /// <param name="targetData">Target data.</param>
-    public static byte[] Encypt(byte[] targetData)
+    public byte[] Encypt(byte[] targetData)
     {
         byte[] encyptBytes = new byte[targetData.Length];
         byte encyptKey1 = 157;
@@ -715,7 +716,7 @@ public class ResourceMgr : Singleton<ResourceMgr>
     /// 4. ActionSet目录下的所有资源xml资源
     /// </summary>
     /// <returns>The all text.</returns>
-    public static IEnumerator LoadEtcText()
+    public IEnumerator LoadEtcText()
     {
         // 本地版本文件不存在
         string filePath = string.Format("{0}/{1}", ConfigMgr.ASSETBUNDLES_PATH, ETC_BUNDLE);
@@ -796,7 +797,7 @@ public class ResourceMgr : Singleton<ResourceMgr>
     /// <summary>
     /// 卸载所有文本资源
     /// </summary>
-    public static void UnloadEtcText()
+    public void UnloadEtcText()
     {
         // 清空缓存资源
 #if UNITY_EDITOR
@@ -811,13 +812,13 @@ public class ResourceMgr : Singleton<ResourceMgr>
 #endif
 
         // 主动回收一下资源
-        ResourceMgr.Recycle(true);
+        ResourceMgr.Instance.Recycle(true);
     }
 
     /// <summary>
     /// 初始化
     /// </summary>
-    public static IEnumerator Init()
+    public IEnumerator Init()
     {
         // 开始不停的回收资源
         Coroutine.DispatchService(RecycleDaemon());
@@ -826,7 +827,7 @@ public class ResourceMgr : Singleton<ResourceMgr>
         yield return Coroutine.DispatchService(VersionMgr.LoadVersionFile());
 
         // 尝试解压资源, 如果是第一次启动游戏则需要将附在包体中的资源
-        yield return Coroutine.DispatchService(ResourceMgr.DoDecompressRes());
+        yield return Coroutine.DispatchService(ResourceMgr.Instance.DoDecompressRes());
 
         // 抛出开始下载资源事件
         //LoadingMgr.ChangeState(ResourceLoadingConst.LOAD_TYPE_UPDATE, ResourceLoadingStateConst.LOAD_STATE_CHECK);
@@ -879,7 +880,7 @@ public class ResourceMgr : Singleton<ResourceMgr>
     /// 具体配置格式patch_res={1.7z|2.7z...}
     /// </summary>
     /// <returns>The daemon.</returns>
-    public static IEnumerator DoDecompressRes()
+    public IEnumerator DoDecompressRes()
     {
         //// 抛出开始解压包体中资源事件
         //LoadingMgr.ChangeState(ResourceLoadingConst.LOAD_TYPE_START_DECOMPRESS, ResourceLoadingStateConst.LOAD_STATE_CHECK);
@@ -992,7 +993,7 @@ public class ResourceMgr : Singleton<ResourceMgr>
     /// <summary>
     /// 回收资源
     /// </summary>
-    public static void Recycle(bool force)
+    public void Recycle(bool force)
     {
         Resource[] reses = new Resource[mResourceMap.Count];
         mResourceMap.Values.CopyTo(reses, 0);
@@ -1039,7 +1040,7 @@ public class ResourceMgr : Singleton<ResourceMgr>
     /// <summary>
     /// 回收资源
     /// </summary>
-    public static void DoRecycleGC()
+    public void DoRecycleGC()
     {
         GC.Collect();
     }
@@ -1048,7 +1049,7 @@ public class ResourceMgr : Singleton<ResourceMgr>
     /// 加载sprite资源
     /// 返回加载完成的sprite对象
     /// </summary>
-    public static UnityEngine.Sprite LoadSprite(string assetPath, bool isDontUnload = false)
+    public Sprite LoadSprite(string assetPath, bool isDontUnload = false)
     {
         // 载入资源
         Resource res = LoadResource(assetPath, isDontUnload, true);
@@ -1058,13 +1059,13 @@ public class ResourceMgr : Singleton<ResourceMgr>
             return null;
 
         // 返回图片资源
-        return res.MainAsset as UnityEngine.Sprite;
+        return res.MainAsset as Sprite;
     }
 
     /// <summary>
     /// 加载图集
     /// </summary>
-    public static UIAtlas LoadAtlas(string assetPath, bool isDontUnload = false)
+    public UIAtlas LoadAtlas(string assetPath, bool isDontUnload = false)
     {
         // 载入资源
         Resource res = LoadResource(assetPath, isDontUnload, false, true);
@@ -1082,7 +1083,7 @@ public class ResourceMgr : Singleton<ResourceMgr>
     /// 返回texture2D文件
     /// </summary>
     /// <param name="assetPath">Asset path.</param>
-    public static UnityEngine.Texture2D LoadTexture(string resPath, bool isDontUnload = false)
+    public UnityEngine.Texture2D LoadTexture(string resPath, bool isDontUnload = false)
     {
         // 载入资源
         Resource res = LoadResource(resPath, isDontUnload);
@@ -1098,7 +1099,7 @@ public class ResourceMgr : Singleton<ResourceMgr>
     /// <summary>
     /// 加载text资源
     /// </summary>
-    public static string LoadText(string resPath)
+    public string LoadText(string resPath)
     {
         string text = string.Empty;
 
@@ -1120,7 +1121,7 @@ public class ResourceMgr : Singleton<ResourceMgr>
     /// <summary>
     /// 加载text资源
     /// </summary>
-    public static byte[] LoadByte(string resPath)
+    public byte[] LoadByte(string resPath)
     {
         byte[] bytes;
 
@@ -1142,7 +1143,7 @@ public class ResourceMgr : Singleton<ResourceMgr>
     /// <summary>
     /// 释放资源
     /// </summary>
-    public static void UnLoad(string resPath)
+    public void UnLoad(string resPath)
     {
         Resource res;
 
@@ -1157,7 +1158,7 @@ public class ResourceMgr : Singleton<ResourceMgr>
     /// <summary>
     /// 载入AssetBundle资源
     /// </summary>
-    public static AssetBundle LoadAssetBundle(string bundle)
+    public AssetBundle LoadAssetBundle(string bundle)
     {
         AssetBundle ab;
 
@@ -1186,7 +1187,7 @@ public class ResourceMgr : Singleton<ResourceMgr>
     /// <summary>
     /// 加载资源
     /// </summary>
-    public static UnityEngine.Object Load(string resPath, bool isDontUnload = false)
+    public UnityEngine.Object Load(string resPath, bool isDontUnload = false)
     {
         // 载入资源
         Resource res = LoadResource(resPath, isDontUnload);
@@ -1202,7 +1203,7 @@ public class ResourceMgr : Singleton<ResourceMgr>
     /// <summary>
     /// 异步加载资源
     /// </summary>
-    public static IEnumerator LoadAsync(string resPath, bool isDontUnload = false, bool isSprite = false)
+    public IEnumerator LoadAsync(string resPath, bool isDontUnload = false, bool isSprite = false)
     {
         Resource res;
 
@@ -1467,22 +1468,22 @@ public class Resource : IYieldObject
         foreach (string ab in AssetBundles)
         {
             // 如果AB2ResourceMap中不需要处理
-            if (!ResourceMgr.AB2ResourceMap.ContainsKey(ab))
+            if (!ResourceMgr.Instance.AB2ResourceMap.ContainsKey(ab))
                 continue;
 
             // 删除资源引用关系
-            ResourceMgr.AB2ResourceMap[ab].Remove(this);
+            ResourceMgr.Instance.AB2ResourceMap[ab].Remove(this);
 
             // 如果AssetBundle已经不存在引用了，直接卸载AssetBundle
             // 否则不能卸载ab资源
-            if (ResourceMgr.AB2ResourceMap[ab].Count != 0)
+            if (ResourceMgr.Instance.AB2ResourceMap[ab].Count != 0)
                 continue;
 
             // 删除引用关系
-            ResourceMgr.AB2ResourceMap.Remove(ab);
+            ResourceMgr.Instance.AB2ResourceMap.Remove(ab);
 
             // 卸载资源
-            ResourceMgr.AssetBundleMap[ab].Unload(false);
+            ResourceMgr.Instance.AssetBundleMap[ab].Unload(false);
         }
 
         // 清空AssetBundles

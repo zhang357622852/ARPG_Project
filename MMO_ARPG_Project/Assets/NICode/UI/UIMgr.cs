@@ -16,7 +16,7 @@ using UnityEngine;
 /// </summary>
 public sealed class UIMgr : Singleton<UIMgr>
 {
-    private const string PREFABS_PATH = "Prefabs/UI/";
+    private const string PREFAB_PATH = "Assets/Prefabs/UI/Forms/{0}.prefab";
 
     public GameObject mFormsUIRoot = null;
 
@@ -54,7 +54,12 @@ public sealed class UIMgr : Singleton<UIMgr>
     /// <summary>
     /// 显示窗口
     /// </summary>
-    public T ShowForms<T>(string formsName, bool IsAutoDepth = true) where T: UIBaseFormsRoot
+    /// <param name="formsName">窗口名字</param>
+    /// <param name="parentForms">父节点</param>
+    /// <param name="IsAutoDepth">是否自动调整UIPanel的depth</param>
+    /// <param name="isDontUnload">是否卸载资源内存</param>
+    /// <returns></returns>
+    public T ShowForms<T>(string formsName, Transform parentForms = null, bool IsAutoDepth = true, bool isDontUnload = false) where T: UIBaseFormsRoot
     {
         if (string.IsNullOrEmpty(formsName))
             return null;
@@ -63,7 +68,7 @@ public sealed class UIMgr : Singleton<UIMgr>
 
         if (!mFormsDic.TryGetValue(formsName, out forms))
         {
-            forms = _CreateForms<T>(formsName);
+            forms = _CreateForms<T>(formsName, parentForms, isDontUnload);
 
             if (forms != null)
             {
@@ -71,6 +76,7 @@ public sealed class UIMgr : Singleton<UIMgr>
                     forms.gameObject.SetActive(true);
 
                 forms.Init();
+                forms.Show();
             }
         }
         else
@@ -116,10 +122,7 @@ public sealed class UIMgr : Singleton<UIMgr>
                                 }
                             }
                             else
-                            {
-                                mCurStackFormsIndex++;
                                 PushForms(formsName);
-                            }
 
                             //3.移除Stack类型的窗口
                             if (mPopupFormsStack.Count > 0)
@@ -163,6 +166,14 @@ public sealed class UIMgr : Singleton<UIMgr>
     /// <summary>
     /// 关闭单个窗口
     /// </summary>
+    public void CloseForms(GameObject go)
+    {
+        CloseForms(go.name);
+    }
+
+    /// <summary>
+    /// 关闭单个窗口
+    /// </summary>
     public void CloseForms(string formsName)
     {
         if (string.IsNullOrEmpty(formsName))
@@ -184,6 +195,17 @@ public sealed class UIMgr : Singleton<UIMgr>
                                 DestroyForms(formsName);
 
                             PopForms(formsName);
+
+                            // 显示下一层窗口
+                            string nextFormsName;
+                            mFormsStackIndex.TryGetValue(mCurStackFormsIndex, out nextFormsName);
+                            UIBaseFormsRoot nextForms = GetForms(nextFormsName);
+
+                            if (nextForms != null)
+                            {
+                                if (!nextForms.gameObject.activeSelf)
+                                    nextForms.gameObject.SetActive(true);
+                            }
                         }
                         else if (forms.mFormsType == UIFormsType.Popup)
                             DestroyForms(formsName);
@@ -200,6 +222,24 @@ public sealed class UIMgr : Singleton<UIMgr>
         }
     }
 
+    /// <summary>
+    /// 获得窗口
+    /// </summary>
+    /// <param name="formsName"></param>
+    /// <returns></returns>
+    public UIBaseFormsRoot GetForms(string formsName)
+    {
+        if (string.IsNullOrEmpty(formsName))
+            return null;
+
+        UIBaseFormsRoot forms;
+
+        if (mFormsDic.TryGetValue(formsName, out forms))
+            return forms;
+
+        return null;
+    }
+
     #endregion
 
     #region 内部接口
@@ -210,11 +250,9 @@ public sealed class UIMgr : Singleton<UIMgr>
     /// <typeparam name="T"></typeparam>
     /// <param name="formsName"></param>
     /// <returns></returns>
-    private T _CreateForms<T>(string formsName) where T: UIBaseFormsRoot
+    private T _CreateForms<T>(string formsName, Transform parentForms = null, bool isDontUnload = false) where T : UIBaseFormsRoot
     {
-        string path = PREFABS_PATH + formsName;
-
-        GameObject prefabGo = Resources.Load(path) as GameObject;
+        GameObject prefabGo = ResourceMgr.Instance.Load(string.Format(PREFAB_PATH, formsName), isDontUnload) as GameObject;
 
         if (prefabGo == null)
         {
@@ -240,8 +278,13 @@ public sealed class UIMgr : Singleton<UIMgr>
         go.name = formsName;
         Transform t = go.transform;
 
-        if (mFormsUIRoot != null)
-            t.parent = mFormsUIRoot.transform;
+        if (parentForms != null)
+            t.parent = parentForms;
+        else
+        {
+            if (mFormsUIRoot != null)
+                t.parent = mFormsUIRoot.transform;
+        }
 
         t.localPosition = Vector3.zero;
         t.localRotation = Quaternion.identity;
@@ -287,6 +330,7 @@ public sealed class UIMgr : Singleton<UIMgr>
     {
         if (!mFormsStackName.ContainsKey(formsName))
         {
+            mCurStackFormsIndex++;
             mFormsStackName.Add(formsName, mCurStackFormsIndex);
             mFormsStackIndex.Add(mCurStackFormsIndex, formsName);
         }
@@ -309,6 +353,7 @@ public sealed class UIMgr : Singleton<UIMgr>
         {
             mFormsStackIndex.Remove(mFormsStackName[formsName]);
             mFormsStackName.Remove(formsName);
+            mCurStackFormsIndex--;
         }
     }
 

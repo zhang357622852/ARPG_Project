@@ -37,8 +37,6 @@ public static class UIPanelCodeTemplate
         // 重载Init函数
         strBuilder.AppendLine("\tpublic override void Init()");
         strBuilder.AppendLine("\t{");
-        strBuilder.AppendLine("\t\tShow();");
-        strBuilder.AppendLine();
         strBuilder.AppendLine("\t\tRegisterEvent();");
         strBuilder.AppendLine("\t}");
 
