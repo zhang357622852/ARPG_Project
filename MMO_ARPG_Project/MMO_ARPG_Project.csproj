@@ -301,12 +301,19 @@
     <Compile Include="Assets\Scripts\Resource\Download.cs" />
     <Compile Include="Assets\Scripts\Resource\ReferencesCounter.cs" />
     <Compile Include="Assets\Scripts\Resource\Unzip.cs" />
+    <Compile Include="Assets\Scripts\SceneState\BattleSceneState.cs" />
+    <Compile Include="Assets\Scripts\SceneState\ISceneState.cs" />
+    <Compile Include="Assets\Scripts\SceneState\MainSceneState.cs" />
+    <Compile Include="Assets\Scripts\SceneState\SceneStateController.cs" />
+    <Compile Include="Assets\Scripts\SceneState\StartSceneState.cs" />
+    <Compile Include="Assets\Scripts\StartUp.cs" />
     <Compile Include="Assets\Scripts\UI\AccountWnd.cs" />
     <Compile Include="Assets\Scripts\UI\AccountWndComponents.cs" />
     <Compile Include="Assets\Scripts\UI\FirsdWnd.cs" />
     <Compile Include="Assets\Scripts\UI\FirsdWndComponents.cs" />
     <Compile Include="Assets\Scripts\UI\StartWnd.cs" />
     <Compile Include="Assets\Scripts\UI\StartWndComponents.cs" />
+    <Compile Include="Assets\Scripts\UI\fdfdsf.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Assets\3rd\UniWebView\ChangeLog.txt" />

@@ -1,11 +1,19 @@
 /*
  * 1.缓存常用UI窗体
+ *      1.1: UIFormsLifeType
+ *              1.1.1: HumanLife(无需缓存)
+ *              1.1.2: GoldLife(缓存/关闭时只是隐藏)
  *
  * 2.UI窗体间的传值
+ *      2.1: GetForms() 获得窗口实例
+ *      2.2: UIEventNotify
  *
  * 3.UI窗体层级，UI导航
+ *      3.1: 窗体层级: AutoCalculateDepth
+ *      3.2: UI导航：自定义的栈记录打开的界面
  *
  * 4.模态窗口:遮蔽层,屏蔽下层消息
+ *      4.1: 构建窗体时，自行添加遮罩层
  */
 using System.Collections;
 using System.Collections.Generic;
@@ -14,7 +22,7 @@ using UnityEngine;
 /// <summary>
 /// 窗体管理类
 /// </summary>
-public sealed class UIMgr : Singleton<UIMgr>
+public sealed class UIMgr : Singleton<UIMgr>, IRelease
 {
     private const string PREFAB_PATH = "Assets/Prefabs/UI/Forms/{0}.prefab";
 
@@ -27,10 +35,12 @@ public sealed class UIMgr : Singleton<UIMgr>
     #region CommonUILayer 通用层(1.功能层 2.弹窗层)
 
     //*********************两种窗口类型:1.基础功能界面窗口 2.可叠加弹窗类型********************//
-    //1/基础功能界面窗口:1.分为可以缓存窗口和不可以缓存窗口 2.具有导航功能(自定义栈结构,特殊功能就是可以把栈中的元素Top到栈顶)
+    //1.基础功能界面窗口:1.分为可以缓存窗口和不可以缓存窗口 2.具有导航功能(自定义栈结构,特殊功能就是可以把栈中的元素Top到栈顶)
     //窗口自定义栈结构--这里用两个字典来管理 string:窗口名 int:窗口在栈中的索引 下表从0开始
     private int mCurStackFormsIndex = 0; //1作为栈的第一个下标
+
     private Dictionary<string, int> mFormsStackName = new Dictionary<string, int>();
+
     private Dictionary<int, string> mFormsStackIndex = new Dictionary<int, string>();
 
     //2.popup窗口类型: 1.在开启一个新 的基础功能窗口时，会清理掉可叠加窗口
@@ -40,14 +50,15 @@ public sealed class UIMgr : Singleton<UIMgr>
 
     #region 外部接口
 
-    public void ClearData()
+    public void Release()
     {
         mCurUILayerDepth = (int)UIFormsLayer.CommonUILayer;
+        mFormsDic.Clear();
 
         mCurStackFormsIndex = 0;
-        mFormsDic.Clear();
         mFormsStackName.Clear();
         mFormsStackIndex.Clear();
+
         mPopupFormsStack.Clear();
     }
 
@@ -152,6 +163,7 @@ public sealed class UIMgr : Singleton<UIMgr>
                     break;
 
                     default:
+
                     if (IsAutoDepth)
                         AutoCalculateDepth(forms, (int)forms.mFormsLayerType);
                     break;

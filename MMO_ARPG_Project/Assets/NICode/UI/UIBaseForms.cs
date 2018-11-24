@@ -14,7 +14,7 @@ public abstract class UIBaseFormsRoot : MonoBehaviour
     public UIFormsLayer mFormsLayerType = UIFormsLayer.CommonUILayer;
 
     /// <summary>
-    /// 第一次创建窗口时调用
+    /// 生命周期中只会执行一次,类似Awake
     /// </summary>
     public abstract void Init();
 
@@ -27,7 +27,8 @@ public abstract class UIBaseFormsRoot : MonoBehaviour
     }
 
     /// <summary>
-    /// 显示
+    /// 每次通过ShowForms打开，都会被调用
+    /// PopForms出战的方式打开的话，是不调用的
     /// </summary>
     public abstract void Show();
 

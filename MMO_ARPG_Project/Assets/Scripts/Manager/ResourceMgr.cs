@@ -2,7 +2,6 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.IO;
-using System.Text;
 using UnityEngine;
 using System.Threading;
 using LitJson;
@@ -183,7 +182,7 @@ public class ResourceMgr : Singleton<ResourceMgr>
         }
 
         // 如果资源已经被成功载入了，直接返回资源
-        if (res.state == Resource.STATE.LOADED)
+        if (res.State == Resource.STATE.LOADED)
         {
             res.LoadSuccessed();
             return res;
@@ -800,16 +799,19 @@ public class ResourceMgr : Singleton<ResourceMgr>
     public void UnloadEtcText()
     {
         // 清空缓存资源
-#if UNITY_EDITOR
-        etcBtyeAssetMap.Clear();
-        etcTextAssetMap.Clear();
-        etcSkillActionList.Clear();
-#else
-        // etc资源映射表
-        etcBtyeAssetMap = new Dictionary<string, byte[]>();
-        etcTextAssetMap = new Dictionary<string, string>();
-        etcSkillActionList = new List<string>();
-#endif
+        if (Platform.IsEditor)
+        {
+            etcBtyeAssetMap.Clear();
+            etcTextAssetMap.Clear();
+            etcSkillActionList.Clear();
+        }
+        else
+        {
+            // etc资源映射表
+            etcBtyeAssetMap = new Dictionary<string, byte[]>();
+            etcTextAssetMap = new Dictionary<string, string>();
+            etcSkillActionList = new List<string>();
+        }
 
         // 主动回收一下资源
         ResourceMgr.Instance.Recycle(true);
@@ -996,6 +998,7 @@ public class ResourceMgr : Singleton<ResourceMgr>
     public void Recycle(bool force)
     {
         Resource[] reses = new Resource[mResourceMap.Count];
+
         mResourceMap.Values.CopyTo(reses, 0);
 
         // 遍历当前资源
@@ -1008,11 +1011,12 @@ public class ResourceMgr : Singleton<ResourceMgr>
                 continue;
 
             // 还不到释放时间，定时10s释放
-            if (! force && (Time.time - res.lastAccessTime) < 10f)
+            if (! force && (Time.time - res.LastAccessTime) < 10f)
                 continue;
 
             // 还有资源正在引用中不释放主要资源
             res.References.RemoveAll(o => { return o == null; });
+
             if (res.References.Count > 0)
             {
                 res.Unload(false);
@@ -1216,7 +1220,7 @@ public class ResourceMgr : Singleton<ResourceMgr>
         }
 
         // 如果资源已经被成功载入了，直接返回资源
-        if (res.state == Resource.STATE.LOADED)
+        if (res.State == Resource.STATE.LOADED)
         {
             // 资源载入成功
             res.LoadSuccessed();
@@ -1231,35 +1235,37 @@ public class ResourceMgr : Singleton<ResourceMgr>
         {
             // 尝试载入资源，如果是编辑器模式则通过UnityEditor.AssetDatabase.LoadAssetAtPath载入
             // 否则通过Resources.Load载入
-#if UNITY_EDITOR
-            // 编辑器测试阶段，直接加载即可
-            // 不是Sprite资源默认UnityEngine.Object
-            if (! isSprite)
-                res.MainAsset = UnityEditor.AssetDatabase.LoadAssetAtPath<UnityEngine.Object>(resPath);
+            if (Platform.IsEditor)
+            {
+                // 编辑器测试阶段，直接加载即可
+                // 不是Sprite资源默认UnityEngine.Object
+                if (!isSprite)
+                    res.MainAsset = UnityEditor.AssetDatabase.LoadAssetAtPath<UnityEngine.Object>(resPath);
+                else
+                    res.MainAsset = UnityEditor.AssetDatabase.LoadAssetAtPath<UnityEngine.Sprite>(resPath);
+            }
             else
-                res.MainAsset = UnityEditor.AssetDatabase.LoadAssetAtPath<UnityEngine.Sprite>(resPath);
-#else
+            {
+                // 资源异步加载
+                ResourceRequest request = null;
 
-            // 资源异步加载
-            ResourceRequest request = null;
+                // 默认资源路径Assets/Prefabs/Model/m1011_d.prefab
+                // 最终的目标路径为Prefabs/Model/m1011_d
+                resPath = resPath.Replace(Path.GetExtension(resPath), string.Empty).Replace("Assets/", string.Empty);
 
-            // 默认资源路径Assets/Prefabs/Model/m1011_d.prefab
-            // 最终的目标路径为Prefabs/Model/m1011_d
-            resPath = resPath.Replace(Path.GetExtension(resPath), string.Empty).Replace("Assets/", string.Empty);
+                // 编辑器测试阶段，直接加载即可
+                // 不是Sprite资源默认UnityEngine.Object
+                if (!isSprite)
+                    request = Resources.LoadAsync(resPath);
+                else
+                    request = Resources.LoadAsync<UnityEngine.Sprite>(resPath);
 
-            // 编辑器测试阶段，直接加载即可
-            // 不是Sprite资源默认UnityEngine.Object
-            if (! isSprite)
-                request = Resources.LoadAsync(resPath);
-            else
-                request = Resources.LoadAsync<UnityEngine.Sprite>(resPath);
+                // 等待资源加载完成
+                yield return request;
 
-            // 等待资源加载完成
-            yield return request;
-
-            // 获取asset资源对象
-            res.MainAsset = request.asset;
-#endif
+                // 获取asset资源对象
+                res.MainAsset = request.asset;
+            }
         }
         else
         {
@@ -1331,12 +1337,22 @@ public class ResourceMgr : Singleton<ResourceMgr>
 /// </summary>
 public class Resource : IYieldObject
 {
-    // 资源状态
     public enum STATE
     {
-        UNLOAD,         // 卸载，资源初始状态，以及被回收后的状态
-        LOADED,         // 加载成功
-        LOAD_FAILED,    // 加载失败
+        /// <summary>
+        /// 卸载，资源初始状态，以及被回收后的状态
+        /// </summary>
+        UNLOAD,
+
+        /// <summary>
+        /// 加载成功
+        /// </summary>
+        LOADED,
+
+        /// <summary>
+        /// 加载失败
+        /// </summary>
+        LOAD_FAILED,
     }
 
     /// <summary>
@@ -1348,7 +1364,7 @@ public class Resource : IYieldObject
     /// 资源状态
     /// </summary>
     STATE mState;
-    public STATE state
+    public STATE State
     {
         get
         {
@@ -1364,6 +1380,7 @@ public class Resource : IYieldObject
     /// MainAsset资源
     /// </summary>
     UnityEngine.Object mMainAsset;
+
     public UnityEngine.Object MainAsset
     {
         get
@@ -1377,19 +1394,23 @@ public class Resource : IYieldObject
 
             // assetOb不是GameObject
             GameObject gobj = mMainAsset as GameObject;
+
             if (gobj == null)
                 return;
 
             // 设置资源引用计数
             ReferencesCounter rc = gobj.AddMissingComponent<ReferencesCounter>();
+
             rc.resPath = Path;
         }
     }
 
     /// <summary>
     /// 资源依赖AssetBundle列表
+    /// 记录本身的assetBundleName和依赖的assetBundleName
     /// </summary>
     List<string> mAssetBundles = new List<string>();
+
     public List<string> AssetBundles
     {
         get
@@ -1406,6 +1427,7 @@ public class Resource : IYieldObject
     /// 该资源引用关系列表
     /// </summary>
     List<GameObject> mReferences = new List<GameObject>();
+
     public List<GameObject> References
     {
         get
@@ -1419,13 +1441,16 @@ public class Resource : IYieldObject
 
     // 最后一次访问时间
     float mLastAccessTime = Time.time;
-    public float lastAccessTime { get { return mLastAccessTime; } }
+
+    public float LastAccessTime { get { return mLastAccessTime; } }
 
     // 构造
-    public Resource(string _path, bool isDontUnload)
+    public Resource(string path, bool isDontUnload)
     {
-        Path = _path;
+        Path = path;
+
         IsDontUnload = isDontUnload;
+
         mState = STATE.UNLOAD;
     }
 

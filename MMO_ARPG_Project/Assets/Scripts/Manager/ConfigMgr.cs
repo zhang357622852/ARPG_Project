@@ -61,18 +61,17 @@ public class ConfigMgr : Singleton<ConfigMgr>, IInit, IRelease
     {
         get
         {
-#if UNITY_EDITOR
-            return Application.persistentDataPath;
-#elif UNITY_STANDALONE_WIN || UNITY_STANDALONE_LINUX
+            if (Platform.IsEditor)
+                return Application.persistentDataPath;
             // Windows平台的将StreamingAssets目录作为资源目录
-            return Application.streamingAssetsPath;
-#elif UNITY_ANDROID
-            return Application.persistentDataPath;
-#elif UNITY_IPHONE
-            return Application.temporaryCachePath;
-#else
-            return string.Empty;
-#endif
+            else if (Platform.IsStandaloneWin || Platform.IsStandaloneLinux)
+                return Application.streamingAssetsPath;
+            else if (Platform.IsAndroid)
+                return Application.persistentDataPath;
+            else if (Platform.IsIphone)
+                return Application.temporaryCachePath;
+            else
+                return string.Empty;
          }
     }
 
@@ -100,9 +99,9 @@ public class ConfigMgr : Singleton<ConfigMgr>, IInit, IRelease
        }
     }
 
-#endregion
+    #endregion
 
-#region 内部接口
+    #region 内部接口
 
     /// <summary>
     /// 更新客户端
@@ -142,11 +141,10 @@ public class ConfigMgr : Singleton<ConfigMgr>, IInit, IRelease
     /// <param name="file">File.</param>
     public static string GetStreamingPathWWW(string file)
     {
-#if UNITY_ANDROID && ! UNITY_EDITOR
-        return Application.streamingAssetsPath + "/" + file;
-#else
-        return "file://" + Application.streamingAssetsPath + "/" + file;
-#endif
+        if (Platform.IsAndroid && !Platform.IsEditor)
+            return Application.streamingAssetsPath + "/" + file;
+        else
+            return "file://" + Application.streamingAssetsPath + "/" + file;
     }
 
     /// <summary>
@@ -156,17 +154,15 @@ public class ConfigMgr : Singleton<ConfigMgr>, IInit, IRelease
     /// <param name="file">File.</param>
     public static string GetLocalRootPathWWW(string file)
     {
-#if UNITY_EDITOR || UNITY_STANDALONE_WIN
-        return "file:///" + Application.persistentDataPath + "/" + file;
-#elif UNITY_ANDROID
-        return "file://" + Application.persistentDataPath + "/" + file;
-#elif UNITY_IPHONE
-        return "file://" + Application.temporaryCachePath + "/" + file;
-#else
-        return file;
-#endif
+        if (Platform.IsEditor || Platform.IsStandaloneWin)
+            return "file:///" + Application.persistentDataPath + "/" + file;
+        else if (Platform.IsAndroid)
+            return "file://" + Application.persistentDataPath + "/" + file;
+        else if (Platform.IsIphone)
+            return "file://" + Application.temporaryCachePath + "/" + file;
+        else
+            return file;
     }
-
 
     // 创建配置
     public static void Create(string content)
